@@ -1,5 +1,5 @@
-const CACHE = 'benzene-note-v2';
-const FILES = ['./', './index.html', './styles.css?v=2', './app.js?v=2', './data.js', './logic.js', './molecules.js', './origins.js', './icon.svg', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const CACHE = 'benzene-note-v3';
+const FILES = ['./', './index.html', './styles.css?v=3', './app.js?v=2', './data.js', './logic.js', './molecules.js', './origins.js', './icon.svg', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', event => {
   const freshFiles = FILES.map(path => new Request(path, { cache: 'reload' }));
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(freshFiles)).then(() => self.skipWaiting()));
