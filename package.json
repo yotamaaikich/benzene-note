@@ -1,0 +1,8 @@
+{
+  "name": "benzene-note",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test", "start": "node dev-server.mjs" },
+  "description": "指で書いて覚える、芳香族化合物の反応ノート"
+}

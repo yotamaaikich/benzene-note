@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#245c49">
+  <meta name="description" content="ベンゼンの反応を、指で書いて覚える。構造式と名前を練習できるスマホ向け学習ノート。">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <title>ベンゼンノート | 書いて覚える芳香族の反応</title>
+</head>
+<body>
+  <header class="app-header">
+    <a class="brand" href="./" aria-label="ベンゼンノート ホーム"><img src="./icon.svg" width="37" height="37" alt=""><span>ベンゼンノート<small>書いて覚える、芳香族の反応。</small></span></a>
+    <button class="text-button library-button" id="libraryOpen" type="button">反応一覧<span class="desktop-label">を見る</span></button>
+  </header>
+
+  <main class="workspace">
+    <aside class="study-nav" aria-label="学習の設定">
+      <p class="eyebrow desktop-label">YOUR STUDY NOTE</p>
+      <h1>反応を、<br class="desktop-label">手で覚えよう。</h1>
+      <p class="nav-description desktop-label">見て終わりにしない。<br>構造式も、名前も、自分の手で。</p>
+      <div class="scope-row">
+        <label class="scope-label" for="categorySelect">学習する範囲</label>
+        <select id="categorySelect" aria-label="学習する範囲"></select>
+      </div>
+      <div class="progress-section">
+        <div class="progress-caption"><span id="modeLabel">このノートの進み具合</span><span id="progressText">0 / 49</span></div>
+        <progress id="sessionProgress" max="49" value="0" aria-label="学習の進み具合"></progress>
+      </div>
+      <div class="session-tools">
+        <button class="text-button" id="shuffleButton" type="button">順番をシャッフル</button>
+        <button class="text-button" id="reviewButton" type="button">復習する <span id="reviewCount">0</span></button>
+      </div>
+      <div class="how-to desktop-label"><p>わからないときは</p><div><b>1</b><span>スキップで構造式を見る</span></div><div><b>2</b><span>もう一度押すと名前が出る</span></div></div>
+      <p class="save-note desktop-label">記録はこの端末に自動保存されます。</p>
+    </aside>
+
+    <section class="notebook" id="notebook" aria-label="問題ノート">
+      <div class="notebook-top"><span class="notebook-label">REACTION NOTE</span><span id="pageNumber">01 / 49</span></div>
+      <div id="questionView">
+        <div class="question-header"><span class="question-tag" id="questionCategory">側鎖の反応・酸化</span><h2><span id="reactantName"></span><span class="source-suffix">の反応</span><br><span id="questionAction"></span></h2><p id="conditions" class="conditions"></p></div>
+        <div class="drawing-heading"><span><span class="step-dot">1</span>生成物の構造式を書く</span><button class="ring-button" id="insertRing" type="button">⌬ ベンゼン環を置く</button></div>
+        <div class="drawing-toolbar" role="group" aria-label="描画ツール">
+          <button class="tool-button active" id="penTool" aria-pressed="true" type="button">ペン</button>
+          <button class="tool-button" id="eraserTool" aria-pressed="false" type="button">消しゴム</button>
+          <span class="toolbar-spacer"></span>
+          <button class="tool-button" id="undoButton" aria-label="ひとつ戻す" type="button">戻す</button>
+          <button class="tool-button" id="clearButton" type="button">全消去</button>
+        </div>
+        <div class="writing-layout" id="writingLayout">
+          <div class="drawing-paper" id="drawingPaper"><canvas id="drawingCanvas" aria-label="指やペンで構造式を書く欄。ベンゼン環を置くボタンも使えます。">指やペンで構造式を書けます。</canvas><span class="canvas-placeholder" id="canvasPlaceholder">ここに、指やペンで書いてみよう。</span></div>
+          <section class="structure-answer" id="structureAnswer" hidden aria-label="正解の構造式"><span class="answer-kicker">お手本の構造式</span><div id="answerMolecule"></div><p>自分の構造式と見比べよう</p></section>
+        </div>
+        <div class="name-section"><label for="nameInput"><span class="step-dot">2</span>化合物の名前を書く</label><div class="name-input-wrap"><input id="nameInput" type="text" placeholder="例：ベンゼン" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"><button id="checkButton" type="button">答え合わせ</button></div><p class="name-note">名前を自動チェック。構造式はお手本と見比べて確認。</p></div>
+        <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+        <section id="explanation" class="explanation" hidden aria-label="答えの解説"><p class="answer-kicker">なぜ、この構造式になる？</p><p id="explanationText"></p><p class="answer-kicker origin-heading">名前の由来・覚え方</p><p id="nameOriginText"></p></section>
+        <div class="notebook-actions"><button id="skipButton" class="skip-button" type="button">スキップ<span id="skipHint">構造式を見る</span></button><button id="nextButton" class="primary-button" type="button">次の問題へ</button></div>
+      </div>
+      <section id="completeView" class="complete-view" hidden><span class="complete-symbol">⌬</span><h2>1周、おつかれさま。</h2><p id="completionSummary"></p><button id="restartButton" class="primary-button" type="button">もう一度、はじめる</button><button id="completeReviewButton" class="text-button" type="button">わからなかった問題を復習する</button></section>
+      <div class="notebook-bottom"><span>BENZENE NOTE</span><span>少しずつ、書けるようになる。</span></div>
+    </section>
+  </main>
+  <footer class="app-footer"><span>資料「THE・ベンゼン」の反応経路をもとに構成</span><button class="text-button" id="aboutOpen" type="button">このノートについて</button></footer>
+
+  <dialog id="libraryDialog" aria-labelledby="libraryTitle"><div class="dialog-header"><div><p class="eyebrow">REACTION LIBRARY</p><h2 id="libraryTitle">反応一覧</h2></div><button class="close-button" id="libraryClose" type="button" aria-label="反応一覧を閉じる">閉じる</button></div><p class="dialog-intro">反応名を開くと、構造式と名前を確認できます。</p><div id="libraryList"></div></dialog>
+  <dialog id="aboutDialog" aria-labelledby="aboutTitle"><div class="dialog-header"><h2 id="aboutTitle">このノートについて</h2><button class="close-button" id="aboutClose" type="button" aria-label="説明を閉じる">閉じる</button></div><div class="about-content"><p>提供された資料「THE・ベンゼン」をもとに、芳香族化合物の反応を49問に整理しました。写真そのものは公開せず、構造式は描き直しています。</p><p>反応条件が省略されていた箇所には、低温・酸性化などの条件を補っています。問題で指定した段階の生成物を答えてください。縮合した官能基の表記も使っています。</p><p><strong>スキップ1回目で構造式、2回目で名前を表示。</strong>手書きの構造式を画像認識で採点する機能はありません。お手本と見比べて確認してください。</p><p>記録や手書きはこのブラウザ内に保存されます。別の端末には同期されません。アクセス解析や広告はありません。</p><p>照合に用いた参考：<a href="https://openstax.org/books/organic-chemistry/pages/16-8-oxidation-of-aromatic-compounds" target="_blank" rel="noopener noreferrer">OpenStax：芳香族化合物の酸化</a>、<a href="https://openstax.org/books/organic-chemistry/pages/24-8-reactions-of-arylamines" target="_blank" rel="noopener noreferrer">OpenStax：芳香族アミンの反応</a>、<a href="https://goldbook.iupac.org/terms/view/P04539" target="_blank" rel="noopener noreferrer">IUPAC：フェノール類</a>。</p><button id="resetProgressButton" class="danger-button" type="button">学習記録をリセット</button><p class="reset-message" id="resetMessage" role="status"></p></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
