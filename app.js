@@ -6,8 +6,9 @@ import { origins } from './origins.js';
 const $ = id => document.getElementById(id);
 const questionMap = new Map(questions.map(q => [q.id, q]));
 const storageKey = 'benzene-note-v1';
-const blankCurrent = () => ({ stage: 0, name: '', actions: [], helped: false, wrong: false, correct: false, finished: false, feedback: '', feedbackKind: '' });
+const blankCurrent = () => ({ stage: 0, name: '', actions: [], helped: false, wrong: false, correct: false, finished: false, feedbackKind: '' });
 const freshState = () => ({ version: 1, category: 'all', mode: 'normal', order: questionIds(), index: 0, current: blankCurrent(), records: {} });
+const feedbackLabels = { missing: '名前を入力してください。', wrong: '名前が違います。', correct: '名前は正解です。' };
 function restore() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey));
@@ -19,6 +20,7 @@ function restore() {
     saved.mode = saved.mode === 'review' ? 'review' : 'normal';
     saved.records = saved.records && typeof saved.records === 'object' ? saved.records : {};
     saved.current = { ...blankCurrent(), ...saved.current };
+    delete saved.current.feedback;
     saved.current.stage = Math.max(0, Math.min(2, Number(saved.current.stage) || 0));
     saved.current.actions = Array.isArray(saved.current.actions) ? saved.current.actions.slice(-250) : [];
     return saved;
@@ -56,14 +58,12 @@ function reviewIds() {
 }
 function renderProgress() {
   const count = state.order.length;
-  const done = Math.min(count, state.index + (state.current.finished ? 1 : 0));
-  $('progressText').textContent = `${done} / ${count}`;
-  $('sessionProgress').max = count;
-  $('sessionProgress').value = done;
-  $('modeLabel').textContent = state.mode === 'review' ? '復習ノートの進み具合' : 'このノートの進み具合';
-  $('pageNumber').textContent = `${String(Math.min(state.index + 1, count)).padStart(2, '0')} / ${count}`;
-  $('reviewCount').textContent = reviewIds().length;
-  $('reviewButton').disabled = !reviewIds().length;
+  $('pageNumber').textContent = `${state.index + 1} / ${count}`;
+  $('reviewMode').hidden = state.mode !== 'review';
+  const countToReview = reviewIds().length;
+  $('reviewCount').textContent = countToReview;
+  $('reviewCount').hidden = countToReview === 0;
+  $('reviewButton').disabled = countToReview === 0;
 }
 function render() {
   const q = currentQuestion();
@@ -73,31 +73,33 @@ function render() {
   $('completeView').hidden = Boolean(q);
   if (!q) {
     const correct = state.order.filter(id => state.records[id]?.correct && !state.records[id]?.helped && !state.records[id]?.wrong).length;
-    $('completionSummary').textContent = `${state.order.length}問のノートを終えました。\nヒントなしで名前が正解：${correct}問\nもう一度確認したい問題：${reviewIds().length}問`;
+    $('completionSummary').textContent = `ヒントなしで正解 ${correct} / ${state.order.length}問\n復習 ${reviewIds().length}問`;
     $('completeReviewButton').hidden = !reviewIds().length;
     return;
   }
   const c = state.current;
+  const showStructure = c.stage >= 1;
+  const showName = c.stage >= 2;
   $('reactantName').textContent = compounds[q.from].name;
   $('questionAction').textContent = q.action;
-  $('questionCategory').textContent = categories.find(cat => cat.id === q.category).name;
   $('conditions').textContent = q.conditions;
-  $('structureAnswer').hidden = c.stage < 1;
-  $('writingLayout').classList.toggle('revealed', c.stage >= 1);
-  $('answerMolecule').innerHTML = c.stage >= 1 ? moleculeSVG(q.to, 'お手本の構造式') : '';
-  $('nameInput').value = c.stage >= 2 ? compounds[q.to].name : c.name;
-  $('nameInput').readOnly = c.stage >= 2;
-  $('nameInput').classList.toggle('revealed-name', c.stage >= 2);
-  $('checkButton').disabled = c.stage >= 2;
-  $('skipButton').disabled = c.stage >= 2;
-  $('skipHint').textContent = c.stage === 0 ? '構造式を見る' : c.stage === 1 ? '名前も見る' : '答えを表示済み';
-  $('feedback').hidden = !c.feedback;
-  $('feedback').textContent = c.feedback;
-  $('feedback').classList.toggle('wrong', c.feedbackKind === 'wrong');
-  $('explanation').hidden = c.stage < 2;
-  $('explanationText').textContent = c.stage >= 2 ? q.explanation : '';
-  $('nameOriginText').textContent = c.stage >= 2 ? origins[q.to] : '';
-  $('nextButton').textContent = state.index === state.order.length - 1 ? 'ノートを終える' : '次の問題へ';
+  $('structureAnswer').hidden = !showStructure;
+  $('writingLayout').classList.toggle('revealed', showStructure);
+  $('answerMolecule').innerHTML = showStructure ? moleculeSVG(q.to, 'お手本の構造式') : '';
+  $('nameInput').value = showName ? '' : c.name;
+  $('nameEntry').hidden = showName;
+  $('nameAnswer').hidden = !showName;
+  $('nameAnswer').value = showName ? compounds[q.to].name : '';
+  $('skipButton').hidden = showName;
+  $('skipHint').textContent = showStructure ? '名前を見る' : '構造式を見る';
+  const feedback = feedbackLabels[c.feedbackKind] ?? '';
+  $('feedback').hidden = !feedback;
+  $('feedback').textContent = feedback;
+  $('feedback').classList.toggle('wrong', c.feedbackKind !== 'correct');
+  $('explanation').hidden = !showName;
+  $('explanationText').textContent = showName ? q.explanation : '';
+  $('nameOriginText').textContent = showName ? origins[q.to] : '';
+  $('nextButton').textContent = state.index === state.order.length - 1 ? '学習を終了' : '次の問題へ';
   $('undoButton').disabled = !c.actions.length;
   $('clearButton').disabled = !hasDrawing();
   requestAnimationFrame(resizeCanvas);
@@ -144,7 +146,6 @@ function drawCanvas() {
     ctx.stroke();
   }
   ctx.globalCompositeOperation = 'source-over';
-  $('canvasPlaceholder').hidden = hasDrawing();
   $('undoButton').disabled = !state.current.actions.length;
   $('clearButton').disabled = !hasDrawing();
 }
@@ -199,22 +200,31 @@ $('insertRing').addEventListener('click', () => {
 });
 $('nameInput').addEventListener('input', () => {
   state.current.name = $('nameInput').value;
-  state.current.feedback = ''; state.current.feedbackKind = '';
+  state.current.feedbackKind = '';
   $('feedback').hidden = true; save();
 });
 function checkAnswer() {
   if (state.current.stage >= 2) return;
   const q = currentQuestion(), c = state.current;
   c.name = $('nameInput').value.trim();
-  if (!c.name) { c.feedback = '名前を入力してから、答え合わせしよう。'; c.feedbackKind = 'wrong'; render(); $('nameInput').focus(); return; }
+  if (!c.name) {
+    c.feedbackKind = 'missing';
+    render();
+    $('nameInput').focus();
+    return;
+  }
   if (isCorrectName(q.to, c.name)) {
     c.correct = true; c.stage = 2; c.finished = true;
-    c.feedback = '名前は正解！ 構造式もお手本と見比べよう。'; c.feedbackKind = 'correct';
+    c.feedbackKind = 'correct';
   } else {
-    c.wrong = true; c.feedback = '名前をもう一度確認しよう。わからないときはスキップで見られます。'; c.feedbackKind = 'wrong';
+    c.wrong = true;
+    c.feedbackKind = 'wrong';
   }
   remember(); save(); render();
-  if (c.correct) revealIntoView();
+  if (c.correct) {
+    $('nameAnswer').focus({ preventScroll: true });
+    revealIntoView();
+  }
 }
 $('checkButton').addEventListener('click', checkAnswer);
 $('nameInput').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); $('nameInput').blur(); checkAnswer(); } });
@@ -226,11 +236,13 @@ $('skipButton').addEventListener('click', () => {
   if (c.stage >= 2) return;
   c.stage = nextRevealStage(c.stage); c.helped = true;
   c.feedbackKind = '';
-  c.feedback = c.stage === 1 ? '構造式を表示しました。名前はまだ隠してあります。' : '名前も表示しました。下の解説で理由を確かめよう。';
   if (c.stage === 2) c.finished = true;
   remember(); save(); render();
   if (c.stage === 1) revealIntoView();
-  else requestAnimationFrame(() => $('explanation').scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' }));
+  else {
+    $('nameAnswer').focus({ preventScroll: true });
+    requestAnimationFrame(() => $('nameAnswer').scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' }));
+  }
 });
 $('nextButton').addEventListener('click', () => {
   remember(true); state.index++; state.current = blankCurrent(); setTool('pen'); save(); render();
@@ -242,12 +254,11 @@ function startSession(ids, mode = 'normal') {
 function startReview() {
   remember(); const ids = reviewIds();
   if (!ids.length) { toast('復習する問題はまだありません。'); return; }
-  startSession(ids, 'review'); toast('わからなかった問題を、もう一度。');
+  startSession(ids, 'review');
 }
 $('categorySelect').innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 $('categorySelect').addEventListener('change', () => { remember(); state.category = $('categorySelect').value; startSession(questionIds(state.category)); });
-$('shuffleButton').setAttribute('aria-label', 'この範囲の問題をシャッフルして最初から解く');
-$('shuffleButton').addEventListener('click', () => { remember(); startSession(shuffle(state.mode === 'review' ? state.order : questionIds(state.category)), state.mode); toast('問題の順番をシャッフルしました。'); });
+$('shuffleButton').addEventListener('click', () => { remember(); startSession(shuffle(state.mode === 'review' ? state.order : questionIds(state.category)), state.mode); });
 $('reviewButton').addEventListener('click', startReview);
 $('completeReviewButton').addEventListener('click', startReview);
 $('restartButton').addEventListener('click', () => startSession(questionIds(state.category)));
