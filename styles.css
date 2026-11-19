@@ -18,3 +18,5 @@ dialog{border:1px solid #e0e5db;border-radius:12px;padding:26px;background:var(-
 @media(max-width:650px){.structure-answer .answer-kicker,.structure-answer>p{align-self:center}}
 .dialog-header{position:sticky;top:-26px;background:var(--paper);z-index:2;padding:9px 0 13px}
 @media(max-width:650px){.dialog-header{top:-20px}.library-answer{grid-template-columns:minmax(0,1fr);gap:0;padding:12px}.library-answer .molecule{height:175px}.library-answer h3{font-size:.95rem;margin:5px 0}.library-answer p{font-size:.78rem}}
+@media(min-width:851px){.study-nav h1{font-size:1.95rem;white-space:nowrap}}
+@media(min-width:651px) and (max-width:850px){.study-nav h1{font-size:1.6rem;white-space:nowrap}}
